@@ -853,3 +853,34 @@ tr.selected .plate { color: #fff; }
   .stat-label { font-size: 10px; }
   .detail-actions .btn { font-size: 12px; }
 }
+
+/* ------------------------------ 地图兜底：内置珠三角示意图 ------------------------------ */
+.schematic-map { display: block; width: 100%; height: 100%; }
+.fb-city, .fb-plate, .fb-fault, .fb-legend {
+  font-family: inherit;
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+.fb-city { font-size: 11px; fill: #4B5E78; stroke: #EDF3E8; stroke-width: 3px; }
+.fb-city-dot { fill: #8FA6BF; }
+.fb-plate { font-size: 10px; fill: #22314A; stroke: #FFFFFF; stroke-width: 2.5px; }
+.fb-fault { font-size: 9px; fill: #D64545; font-weight: 700; stroke: #FFFFFF; stroke-width: 2.5px; }
+.fb-legend { font-size: 10px; fill: #5B6B80; }
+.fb-vehicle { cursor: pointer; }
+.fb-vehicle.selected rect:first-child { stroke: #FF7A1A; stroke-width: 2.5; }
+.fallback-note {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 500;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .92);
+  color: var(--muted);
+  font-size: 10px;
+  pointer-events: none;
+}
+@media (max-width: 860px) {
+  .fallback-note { top: 10px; right: 10px; left: auto; bottom: auto; }
+}

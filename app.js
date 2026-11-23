@@ -61,6 +61,7 @@
     map: null,
     markers: new Map(),
     amapMode: true,
+    fallback: false,
     log: []
   };
   var toastTimer = null;
@@ -137,13 +138,17 @@
       buttons[i].classList.toggle('active', active);
       buttons[i].setAttribute('aria-selected', active ? 'true' : 'false');
     }
-    if (S.mobileTab === 'map' && S.map) {
-      setTimeout(function () {
-        S.map.invalidateSize();
-        var vehicle = S.userPickedVehicle && S.vehicleId ? F.vehicleById(S.vehicleId) : null;
-        if (vehicle) S.map.setView(pointFor(vehicle), Math.max(S.map.getZoom(), 11));
-        else fitCurrentCompany();
-      }, 0);
+    if (S.mobileTab === 'map') {
+      if (S.fallback) {
+        renderFallbackMap();
+      } else if (S.map) {
+        setTimeout(function () {
+          S.map.invalidateSize();
+          var vehicle = S.userPickedVehicle && S.vehicleId ? F.vehicleById(S.vehicleId) : null;
+          if (vehicle) S.map.setView(pointFor(vehicle), Math.max(S.map.getZoom(), 11));
+          else fitCurrentCompany();
+        }, 0);
+      }
     }
   }
 
@@ -247,6 +252,15 @@
   }
 
   function initMap() {
+    if (S.fallback) {
+      renderFallbackMap();
+      return;
+    }
+    if (typeof L === 'undefined') {
+      enableFallbackMap('地图组件未加载，已切换示意图');
+      return;
+    }
+
     S.map = L.map('map', {
       zoomControl: false,
       attributionControl: true,
@@ -257,8 +271,9 @@
     var cfg = window.FZR_MAP_CONFIG || {};
     S.amapMode = cfg.provider !== 'tianditu' || !cfg.tiandituKey;
 
+    var tiles = null;
     if (S.amapMode) {
-      L.tileLayer(
+      tiles = L.tileLayer(
         'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
         { subdomains: '1234', maxZoom: 18, attribution: '© 高德地图' }
       ).addTo(S.map);
@@ -267,7 +282,7 @@
       var url = 'https://t{s}.tianditu.gov.cn/{layer}_w/wmts?SERVICE=WMTS&REQUEST=GetTile' +
         '&VERSION=1.0.0&LAYER={layer}&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles' +
         '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=' + tk;
-      L.tileLayer(url.replace(/\{layer\}/g, 'vec'), {
+      tiles = L.tileLayer(url.replace(/\{layer\}/g, 'vec'), {
         subdomains: '01234567', maxZoom: 18, attribution: '© 天地图'
       }).addTo(S.map);
       L.tileLayer(url.replace(/\{layer\}/g, 'cva'), {
@@ -275,10 +290,200 @@
       }).addTo(S.map);
     }
 
-    document.getElementById('mapZoomIn').addEventListener('click', function () { S.map.zoomIn(); });
-    document.getElementById('mapZoomOut').addEventListener('click', function () { S.map.zoomOut(); });
+    // 手机网络/校园网可能拦截高德瓦片；加载不出来时自动换成内置示意图，
+    // 保证演示时地图区域永远有内容、车辆仍可点选。
+    if (tiles) {
+      var tileLoaded = false;
+      var tileErrors = 0;
+      tiles.on('tileload', function () { tileLoaded = true; });
+      tiles.on('tileerror', function () {
+        tileErrors += 1;
+        if (tileErrors >= 4) enableFallbackMap('地图瓦片加载失败，已切换示意图');
+      });
+      setTimeout(function () {
+        if (!tileLoaded && !S.fallback) {
+          enableFallbackMap('地图瓦片加载超时，已切换示意图');
+        }
+      }, 7000);
+    }
+
+    bindMapControls();
+  }
+
+  function bindMapControls() {
+    document.getElementById('mapZoomIn').addEventListener('click', function () {
+      if (S.map) S.map.zoomIn();
+    });
+    document.getElementById('mapZoomOut').addEventListener('click', function () {
+      if (S.map) S.map.zoomOut();
+    });
     document.getElementById('mapFit').addEventListener('click', fitCurrentCompany);
   }
+
+  function enableFallbackMap(reason) {
+    if (S.fallback) return;
+    S.fallback = true;
+    if (S.map) {
+      try { S.map.remove(); } catch (e) { /* 忽略 Leaflet 清理异常 */ }
+      S.map = null;
+    }
+    S.markers.clear();
+    var controls = document.querySelector('.map-controls');
+    if (controls) controls.classList.add('hidden');
+    renderFallbackMap();
+
+    var card = document.querySelector('.map-card');
+    if (card && !card.querySelector('.fallback-note')) {
+      var note = document.createElement('div');
+      note.className = 'fallback-note';
+      note.textContent = reason || '示意图模式';
+      card.appendChild(note);
+    }
+  }
+
+  /* 内置珠三角示意图：不依赖网络瓦片，手机端兜底。 */
+  function renderFallbackMap() {
+    var box = document.getElementById('map');
+    if (!box) return;
+    var w = Math.max(280, box.clientWidth || 360);
+    var h = Math.max(320, box.clientHeight || 480);
+    var B = { minLat: 21.9, maxLat: 23.7, minLng: 112.6, maxLng: 114.8 };
+    function px(lng) { return ((lng - B.minLng) / (B.maxLng - B.minLng)) * w; }
+    function py(lat) { return ((B.maxLat - lat) / (B.maxLat - B.minLat)) * h; }
+
+    var cities = [
+      ['广州', 23.129, 113.264, -18, -18, 'end'],
+      ['佛山', 23.02, 113.12, -8, 16, 'end'],
+      ['东莞', 23.02, 113.75, 8, 14, 'start'],
+      ['深圳', 22.543, 114.058, 30, 40, 'start'],
+      ['香港', 22.32, 114.17, 6, 14, 'start'],
+      ['珠海', 22.27, 113.577, -34, 6, 'end'],
+      ['澳门', 22.19, 113.54, -8, 30, 'end'],
+      ['中山', 22.52, 113.39, -8, 18, 'end'],
+      ['惠州', 23.11, 114.42, 6, 4, 'start'],
+      ['江门', 22.58, 113.08, -8, -8, 'end']
+    ];
+    var roads = [
+      [23.129, 113.264, 23.02, 113.12], [23.129, 113.264, 23.02, 113.75],
+      [23.02, 113.75, 22.543, 114.058], [22.543, 114.058, 22.32, 114.17],
+      [23.129, 113.264, 22.52, 113.39], [22.52, 113.39, 22.27, 113.577],
+      [22.52, 113.39, 22.58, 113.08], [23.129, 113.264, 23.11, 114.42]
+    ];
+
+    var svg = '<svg class="schematic-map" viewBox="0 0 ' + w + ' ' + h +
+      '" preserveAspectRatio="none" role="img" aria-label="珠三角示意图">';
+    svg += '<rect width="' + w + '" height="' + h + '" fill="#DCEBF7"/>';
+
+    // 西岸 / 东岸陆地，中间留出珠江口
+    svg += '<path d="M0,0 L' + (w * 0.62) + ',0 L' + (w * 0.55) + ',' + (h * 0.3) +
+      ' L' + (w * 0.5) + ',' + (h * 0.55) + ' L' + (w * 0.54) + ',' + (h * 0.78) +
+      ' L' + (w * 0.42) + ',' + h + ' L0,' + h + ' Z" fill="#EDF3E8"/>';
+    svg += '<path d="M' + (w * 0.62) + ',0 L' + w + ',0 L' + w + ',' + (h * 0.7) +
+      ' L' + (w * 0.78) + ',' + (h * 0.8) + ' L' + (w * 0.7) + ',' + (h * 0.55) +
+      ' L' + (w * 0.56) + ',' + (h * 0.38) + ' Z" fill="#EDF3E8"/>';
+
+    // 珠江
+    svg += '<path d="M' + (w * 0.54) + ',0 L' + (w * 0.56) + ',' + (h * 0.28) +
+      ' L' + (w * 0.51) + ',' + (h * 0.55) + ' L' + (w * 0.55) + ',' + (h * 0.8) +
+      '" fill="none" stroke="#B7D8F0" stroke-width="' + Math.max(10, w * 0.04) +
+      '" stroke-linecap="round"/>';
+
+    // 主干道
+    roads.forEach(function (r) {
+      svg += '<line x1="' + px(r[1]).toFixed(1) + '" y1="' + py(r[0]).toFixed(1) +
+        '" x2="' + px(r[3]).toFixed(1) + '" y2="' + py(r[2]).toFixed(1) +
+        '" stroke="#F0C27B" stroke-width="2" opacity=".75"/>';
+    });
+
+    // 城市
+    cities.forEach(function (c) {
+      var x = px(c[2]);
+      var y = py(c[1]);
+      svg += '<circle class="fb-city-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+        '" r="2.6"/>';
+      svg += '<text class="fb-city" x="' + (x + c[3]).toFixed(1) + '" y="' + (y + c[4]).toFixed(1) +
+        '" text-anchor="' + c[5] + '">' + c[0] + '</text>';
+    });
+
+    // 车辆：同一城市的车会重叠，做一点避让 + 引线，保证车牌可读。
+    var placed = [];
+    function placeVehicle(x, y) {
+      var nx = x;
+      var ny = y;
+      for (var attempt = 0; attempt < 10; attempt += 1) {
+        var hit = null;
+        for (var j = 0; j < placed.length; j += 1) {
+          if (Math.abs(placed[j][0] - nx) < 40 && Math.abs(placed[j][1] - ny) < 34) {
+            hit = placed[j];
+            break;
+          }
+        }
+        if (!hit) break;
+
+        // 沿着“远离已放置车辆”的方向推开，避免固定偏移又撞回原位。
+        var dx = nx - hit[0];
+        var dy = ny - hit[1];
+        var len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 2) {
+          dx = attempt % 2 === 0 ? 1 : -1;
+          dy = attempt % 3 === 0 ? 1 : -1;
+          len = Math.sqrt(dx * dx + dy * dy);
+        }
+        var push = 34 + attempt * 6;
+        nx = hit[0] + (dx / len) * push;
+        ny = hit[1] + (dy / len) * push * 0.8;
+      }
+      placed.push([nx, ny]);
+      return [nx, ny];
+    }
+
+    companyVehicles(S.companyId).forEach(function (v, index) {
+      var st = F.vehicleStats(v.id);
+      var color = st.fault > 0 ? '#D64545' : (st.online > 0 ? '#1F9D55' : '#98A2B3');
+      var selected = S.vehicleId === v.id ? ' selected' : '';
+      var baseX = px(v.lng);
+      var baseY = py(v.lat);
+      var pos = placeVehicle(baseX, baseY);
+      var x = pos[0].toFixed(1);
+      var y = pos[1].toFixed(1);
+      if (Math.abs(pos[0] - baseX) > 2 || Math.abs(pos[1] - baseY) > 2) {
+        svg += '<line x1="' + baseX.toFixed(1) + '" y1="' + baseY.toFixed(1) +
+          '" x2="' + x + '" y2="' + y +
+          '" stroke="#8FA6BF" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/>';
+      }
+      var labelY = index % 2 === 0 ? 27 : -15;
+      var faultY = index % 2 === 0 ? 39 : -27;
+      svg += '<g class="fb-vehicle' + selected + '" data-vehicle="' + v.id +
+        '" transform="translate(' + x + ',' + y + ')">' +
+        '<rect x="-16" y="-10" width="32" height="17" rx="4" fill="' + color +
+        '" stroke="#fff" stroke-width="1.5"/>' +
+        '<rect x="-12" y="-7" width="6" height="5" rx="1" fill="#EAF4FF"/>' +
+        '<rect x="-4" y="-7" width="6" height="5" rx="1" fill="#EAF4FF"/>' +
+        '<rect x="4" y="-7" width="6" height="5" rx="1" fill="#EAF4FF"/>' +
+        '<circle cx="-8" cy="8.5" r="2" fill="#22314A"/>' +
+        '<circle cx="8" cy="8.5" r="2" fill="#22314A"/>' +
+        '<text class="fb-plate" x="0" y="' + labelY + '" text-anchor="middle">' + v.plate + '</text>' +
+        (st.fault > 0 ? '<text class="fb-fault" x="0" y="' + faultY +
+          '" text-anchor="middle">故障' + st.fault + '</text>' : '') +
+        '</g>';
+    });
+
+    // 图例（右下角，避开左下角的说明）
+    svg += '<g transform="translate(' + (w - 150) + ',' + (h - 14) + ')" class="fb-legend">' +
+      '<circle cx="0" cy="0" r="3" fill="#1F9D55"/><text x="7" y="4">在线</text>' +
+      '<circle cx="50" cy="0" r="3" fill="#98A2B3"/><text x="57" y="4">离线</text>' +
+      '<circle cx="100" cy="0" r="3" fill="#D64545"/><text x="107" y="4">故障</text>' +
+      '</g>';
+    svg += '</svg>';
+
+    box.innerHTML = svg;
+  }
+
+  document.getElementById('map').addEventListener('click', function (event) {
+    if (!S.fallback) return;
+    var group = event.target.closest ? event.target.closest('[data-vehicle]') : null;
+    if (group) selectVehicle(group.getAttribute('data-vehicle'), true);
+  });
 
   function busIcon(vehicle) {
     var st = F.vehicleStats(vehicle.id);
@@ -301,6 +506,7 @@
   }
 
   function rebuildMarkers() {
+    if (S.fallback) { renderFallbackMap(); return; }
     if (!S.map) return;
     S.markers.forEach(function (marker) { S.map.removeLayer(marker); });
     S.markers.clear();
@@ -315,6 +521,7 @@
   }
 
   function updateMarkerIcons() {
+    if (S.fallback) { renderFallbackMap(); return; }
     S.markers.forEach(function (marker, id) {
       var vehicle = F.vehicleById(id);
       if (vehicle) marker.setIcon(busIcon(vehicle));
@@ -322,7 +529,7 @@
   }
 
   function fitVehicles(vehicles) {
-    if (!S.map || vehicles.length === 0) return;
+    if (S.fallback || !S.map || vehicles.length === 0) return;
     var points = vehicles.map(pointFor);
     if (points.length === 1) {
       S.map.setView(points[0], 13);
@@ -726,7 +933,8 @@
 
   /* ------------------------------ 轮询 ------------------------------ */
   window.addEventListener('resize', function () {
-    if (S.map) S.map.invalidateSize();
+    if (S.fallback) renderFallbackMap();
+    else if (S.map) S.map.invalidateSize();
     if (window.innerWidth > 1080) {
       hideDetailBackdrop();
     } else if (detailPanel.classList.contains('open')) {
