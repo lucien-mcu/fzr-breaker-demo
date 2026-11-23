@@ -1716,3 +1716,36 @@ button, input, select { -webkit-tap-highlight-color: transparent; }
   .title-mobile, .sub-mobile { display: inline; }
   .login-footer { display: block; color: var(--faint); }
 }
+/* PC 端：登录面板左移，背景照片只显示在面板左侧 */
+.login-screen {
+  --login-card-w: 440px;
+  --login-gap: clamp(32px, 6vw, 110px);
+}
+.login-bg {
+  right: calc(var(--login-card-w) + var(--login-gap));
+  overflow: hidden;
+}
+.login-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 150px;
+  background: linear-gradient(90deg, transparent 0%, #0B5FD0 82%);
+  pointer-events: none;
+}
+.login-shell { padding-right: var(--login-gap); }
+.login-card {
+  width: var(--login-card-w);
+  max-width: var(--login-card-w);
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(0, 20, 60, .25);
+}
+
+@media (max-width: 860px) {
+  .login-bg { background: #F5F5F7; right: 0; }
+  .login-bg::after { display: none; }
+  .login-shell { padding: 24px 18px calc(24px + env(safe-area-inset-bottom)); }
+  .login-card { width: 100%; max-width: 400px; border-radius: 24px; }
+}
