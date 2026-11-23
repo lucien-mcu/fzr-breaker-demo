@@ -1749,3 +1749,13 @@ button, input, select { -webkit-tap-highlight-color: transparent; }
   .login-shell { padding: 24px 18px calc(24px + env(safe-area-inset-bottom)); }
   .login-card { width: 100%; max-width: 400px; border-radius: 24px; }
 }
+
+/* A 方案：插画完整显示（contain），登录面板再左移 100px */
+.login-screen {
+  --login-gap: calc(clamp(32px, 6vw, 110px) + 100px);
+}
+.login-bg {
+  background-size: contain;
+  background-position: left center;
+  background-repeat: no-repeat;
+}
