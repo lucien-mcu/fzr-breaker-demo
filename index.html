@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#0E3A66">
   <title>自动破窗器中央管理系统</title>
   <link rel="icon" type="image/png" href="app-icon.png">
-  <link rel="stylesheet" href="vendor/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=20261123b">
+  <link rel="stylesheet" href="vendor/leaflet.css"
+        onerror="this.onerror=function(){this.onerror=null;this.href='https://lib.baomitu.com/leaflet/1.9.4/leaflet.css'};this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
+  <link rel="stylesheet" href="styles.css?v=20261123c">
 </head>
 <body>
 
@@ -124,6 +125,12 @@
         <div class="map-overlay">
           <b id="mapCompany">全部公司</b>
           <span id="mapSummary"></span>
+          <select id="mapProvider" class="map-provider" aria-label="地图源">
+            <option value="0">高德地图</option>
+            <option value="1">高德备线</option>
+            <option value="2">ArcGIS 街道图</option>
+            <option value="3">OpenStreetMap</option>
+          </select>
         </div>
         <div class="map-controls">
           <button id="mapZoomIn" type="button" aria-label="放大">+</button>
@@ -238,8 +245,17 @@
 <div id="sidebarMask" class="sidebar-mask hidden"></div>
 
 <script src="vendor/leaflet.js"></script>
-<script src="map-config.js?v=20261123b"></script>
-<script src="data.js?v=20261123b"></script>
-<script src="app.js?v=20261123b"></script>
+<script>
+  // 本地 vendor 漏传时，自动从 CDN 补 Leaflet，保证真地图还能出来。
+  if (typeof L === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"><\/script>');
+  }
+  if (typeof L === 'undefined') {
+    document.write('<script src="https://lib.baomitu.com/leaflet/1.9.4/leaflet.js"><\/script>');
+  }
+</script>
+<script src="map-config.js?v=20261123c"></script>
+<script src="data.js?v=20261123c"></script>
+<script src="app.js?v=20261123c"></script>
 </body>
 </html>

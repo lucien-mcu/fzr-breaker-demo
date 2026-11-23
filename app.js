@@ -24,6 +24,7 @@
   var statsBox = document.getElementById('stats');
   var companyChips = document.getElementById('companyChips');
   var centerCol = document.querySelector('.center-col');
+  var mapProvider = document.getElementById('mapProvider');
   var mapCompany = document.getElementById('mapCompany');
   var mapSummary = document.getElementById('mapSummary');
   var vehicleTitle = document.getElementById('vehicleTitle');
@@ -60,7 +61,11 @@
     mobileTab: 'map',
     map: null,
     markers: new Map(),
-    amapMode: true,
+    gcjMode: true,
+    providerIndex: 0,
+    providerBound: false,
+    tileLayer: null,
+    tileTimer: null,
     fallback: false,
     log: []
   };
@@ -248,8 +253,33 @@
   }
 
   function pointFor(vehicle) {
-    return S.amapMode ? toGcj02(vehicle.lat, vehicle.lng) : [vehicle.lat, vehicle.lng];
+    return S.gcjMode ? toGcj02(vehicle.lat, vehicle.lng) : [vehicle.lat, vehicle.lng];
   }
+
+  /* 国内瓦片源按顺序自动切换：高德 → 腾讯 → OSM → Carto。
+     GCJ-02（高德/腾讯）需要偏移，WGS-84（OSM/Carto）直接用原始坐标。 */
+  var TILE_PROVIDERS = [
+    {
+      id: 'amap', name: '高德地图', gcj: true,
+      url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+      subdomains: '1234', attribution: '© 高德地图'
+    },
+    {
+      id: 'amap2', name: '高德备线', gcj: true,
+      url: 'https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=7',
+      subdomains: '1234', attribution: '© 高德地图'
+    },
+    {
+      id: 'arcgis', name: 'ArcGIS 街道图', gcj: false,
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      subdomains: '', attribution: '© Esri'
+    },
+    {
+      id: 'osm', name: 'OpenStreetMap', gcj: false,
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      subdomains: 'abc', attribution: '© OpenStreetMap'
+    }
+  ];
 
   function initMap() {
     if (S.fallback) {
@@ -265,49 +295,70 @@
       zoomControl: false,
       attributionControl: true,
       minZoom: 4,
-      maxZoom: 18
+      maxZoom: 18,
+      // 手机端保留双指缩放、拖动、双击缩放
+      touchZoom: true,
+      dragging: true,
+      doubleClickZoom: true,
+      scrollWheelZoom: true
     }).setView([22.9, 113.6], 9);
 
-    var cfg = window.FZR_MAP_CONFIG || {};
-    S.amapMode = cfg.provider !== 'tianditu' || !cfg.tiandituKey;
-
-    var tiles = null;
-    if (S.amapMode) {
-      tiles = L.tileLayer(
-        'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
-        { subdomains: '1234', maxZoom: 18, attribution: '© 高德地图' }
-      ).addTo(S.map);
-    } else {
-      var tk = encodeURIComponent(cfg.tiandituKey);
-      var url = 'https://t{s}.tianditu.gov.cn/{layer}_w/wmts?SERVICE=WMTS&REQUEST=GetTile' +
-        '&VERSION=1.0.0&LAYER={layer}&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles' +
-        '&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=' + tk;
-      tiles = L.tileLayer(url.replace(/\{layer\}/g, 'vec'), {
-        subdomains: '01234567', maxZoom: 18, attribution: '© 天地图'
-      }).addTo(S.map);
-      L.tileLayer(url.replace(/\{layer\}/g, 'cva'), {
-        subdomains: '01234567', maxZoom: 18
-      }).addTo(S.map);
-    }
-
-    // 手机网络/校园网可能拦截高德瓦片；加载不出来时自动换成内置示意图，
-    // 保证演示时地图区域永远有内容、车辆仍可点选。
-    if (tiles) {
-      var tileLoaded = false;
-      var tileErrors = 0;
-      tiles.on('tileload', function () { tileLoaded = true; });
-      tiles.on('tileerror', function () {
-        tileErrors += 1;
-        if (tileErrors >= 4) enableFallbackMap('地图瓦片加载失败，已切换示意图');
-      });
-      setTimeout(function () {
-        if (!tileLoaded && !S.fallback) {
-          enableFallbackMap('地图瓦片加载超时，已切换示意图');
-        }
-      }, 7000);
-    }
-
     bindMapControls();
+    if (!S.providerBound) {
+      S.providerBound = true;
+      mapProvider.addEventListener('change', function () {
+        setTileProvider(Number(this.value), true);
+      });
+    }
+    setTileProvider(0);
+  }
+
+  /* 切换瓦片源；某个源被手机网络拦截时自动试下一个，而不是直接掉示意图。 */
+  function setTileProvider(index, manual) {
+    if (!S.map) return;
+    index = Math.max(0, Math.min(TILE_PROVIDERS.length - 1, index));
+    var provider = TILE_PROVIDERS[index];
+
+    if (S.tileLayer) {
+      S.map.removeLayer(S.tileLayer);
+      S.tileLayer = null;
+    }
+    if (S.tileTimer) {
+      clearTimeout(S.tileTimer);
+      S.tileTimer = null;
+    }
+
+    S.providerIndex = index;
+    S.gcjMode = provider.gcj;
+    if (mapProvider) mapProvider.value = String(index);
+
+    var layer = L.tileLayer(provider.url, {
+      subdomains: provider.subdomains,
+      maxZoom: 18,
+      attribution: provider.attribution
+    });
+    S.tileLayer = layer;
+
+    var loaded = false;
+    var errors = 0;
+    layer.on('tileload', function () { loaded = true; });
+    layer.on('tileerror', function () {
+      errors += 1;
+      if (errors >= 4 && S.providerIndex === index && !S.fallback) {
+        if (index + 1 < TILE_PROVIDERS.length) setTileProvider(index + 1);
+        else enableFallbackMap('所有地图源都加载失败，请检查网络');
+      }
+    });
+    S.tileTimer = setTimeout(function () {
+      if (!loaded && S.providerIndex === index && !S.fallback) {
+        if (index + 1 < TILE_PROVIDERS.length) setTileProvider(index + 1);
+        else enableFallbackMap('地图瓦片加载超时，请检查网络');
+      }
+    }, 6000);
+
+    layer.addTo(S.map);
+    rebuildMarkers();
+    if (!manual) fitCurrentCompany();
   }
 
   function bindMapControls() {
@@ -323,6 +374,11 @@
   function enableFallbackMap(reason) {
     if (S.fallback) return;
     S.fallback = true;
+    if (S.tileTimer) {
+      clearTimeout(S.tileTimer);
+      S.tileTimer = null;
+    }
+    S.tileLayer = null;
     if (S.map) {
       try { S.map.remove(); } catch (e) { /* 忽略 Leaflet 清理异常 */ }
       S.map = null;
@@ -330,15 +386,43 @@
     S.markers.clear();
     var controls = document.querySelector('.map-controls');
     if (controls) controls.classList.add('hidden');
+    if (mapProvider) mapProvider.classList.add('hidden');
     renderFallbackMap();
 
     var card = document.querySelector('.map-card');
     if (card && !card.querySelector('.fallback-note')) {
       var note = document.createElement('div');
       note.className = 'fallback-note';
-      note.textContent = reason || '示意图模式';
+      var text = document.createElement('span');
+      text.textContent = reason || '示意图模式';
+      var retry = document.createElement('button');
+      retry.type = 'button';
+      retry.textContent = '重试真地图';
+      retry.addEventListener('click', retryRealMap);
+      note.appendChild(text);
+      note.appendChild(retry);
       card.appendChild(note);
     }
+  }
+
+  function retryRealMap() {
+    S.fallback = false;
+    if (S.tileTimer) {
+      clearTimeout(S.tileTimer);
+      S.tileTimer = null;
+    }
+    S.tileLayer = null;
+    if (S.map) {
+      try { S.map.remove(); } catch (e) { /* 忽略 */ }
+      S.map = null;
+    }
+    S.markers.clear();
+    var note = document.querySelector('.fallback-note');
+    if (note) note.remove();
+    var controls = document.querySelector('.map-controls');
+    if (controls) controls.classList.remove('hidden');
+    if (mapProvider) mapProvider.classList.remove('hidden');
+    initMap();
   }
 
   /* 内置珠三角示意图：不依赖网络瓦片，手机端兜底。 */
