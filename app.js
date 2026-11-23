@@ -1140,9 +1140,62 @@
     updateMapOverlay();
   }, 2000);
 
-  /* ------------------------------ 启动 ------------------------------ */
-  if (window.innerWidth > 860) document.getElementById('loginAccount').focus();
-  if (new URLSearchParams(window.location.search).get('demo') === '1') {
-    attemptLogin();
+  /* ------------------------------ 启动 / 3 秒开屏广告 ------------------------------ */
+  var params = new URLSearchParams(window.location.search);
+  var demoMode = params.get('demo') === '1';
+  var noAd = params.get('noad') === '1';
+  var splashView = document.getElementById('splashView');
+  var splashSkip = document.getElementById('splashSkip');
+  var splashCount = document.getElementById('splashCount');
+  var splashTimer = null;
+  var splashLeft = 3;
+
+  function afterSplash() {
+    if (window.innerWidth > 860) document.getElementById('loginAccount').focus();
+    if (demoMode) attemptLogin();
   }
+
+  function finishSplash() {
+    if (!splashView || splashView.classList.contains('splash-hide')) return;
+    if (splashTimer) {
+      clearInterval(splashTimer);
+      splashTimer = null;
+    }
+    splashView.classList.add('splash-hide');
+    setTimeout(function () { splashView.classList.add('hidden'); }, 460);
+    afterSplash();
+  }
+
+  function startSplash() {
+    if (!splashView || noAd) {
+      if (splashView) splashView.classList.add('hidden');
+      afterSplash();
+      return;
+    }
+
+    // 有 assets/ad.mp4 时优先播放 3 秒视频；没有则展示海报。
+    var video = document.getElementById('splashVideo');
+    if (video) {
+      video.addEventListener('loadeddata', function () {
+        video.classList.add('ready');
+        splashView.classList.add('has-video');
+      });
+      video.addEventListener('error', function () {
+        if (video.parentNode) video.parentNode.removeChild(video);
+      });
+      video.src = 'assets/ad.mp4';
+      var playing = video.play();
+      if (playing && playing.catch) playing.catch(function () {});
+    }
+
+    if (splashSkip) splashSkip.addEventListener('click', finishSplash);
+
+    splashTimer = setInterval(function () {
+      splashLeft -= 1;
+      if (splashCount) splashCount.textContent = String(Math.max(splashLeft, 0));
+      if (splashLeft <= 0) finishSplash();
+    }, 1000);
+  }
+
+  startSplash();
 })();

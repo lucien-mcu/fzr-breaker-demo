@@ -8,17 +8,41 @@
   <link rel="icon" type="image/png" href="app-icon.png">
   <link rel="stylesheet" href="vendor/leaflet.css"
         onerror="this.onerror=function(){this.onerror=null;this.href='https://lib.baomitu.com/leaflet/1.9.4/leaflet.css'};this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
-  <link rel="stylesheet" href="styles.css?v=20261124e">
+  <link rel="stylesheet" href="styles.css?v=20261124g">
 </head>
 <body>
 
+<!-- ================= 开屏广告（3 秒） ================= -->
+<section id="splashView" class="splash-screen" aria-label="开屏广告">
+  <video id="splashVideo" class="splash-video" muted playsinline preload="auto"></video>
+  <div class="splash-light" aria-hidden="true"></div>
+
+  <div class="splash-brand">
+    <span class="splash-logo">F</span>
+    <div class="splash-brand-text">
+      <b>FURTHER</b>
+      <small>福泽尔科技</small>
+    </div>
+  </div>
+
+  <div class="splash-slogan">
+    <span>让科技</span>
+    <span class="accent">护航生命</span>
+  </div>
+  <p class="splash-product">自动破窗器 · 远程安全守护</p>
+
+  <div class="splash-bottom">
+    <span class="splash-logo small">F</span>
+    <span>FURTHER · 福泽尔科技</span>
+  </div>
+
+  <button id="splashSkip" class="splash-skip" type="button" aria-label="跳过广告">跳过 <span id="splashCount">3</span></button>
+  <div class="splash-progress" aria-hidden="true"><i></i></div>
+</section>
+
 <!-- ================= 登录 ================= -->
 <section id="loginView" class="login-screen">
-  <div class="login-bg" aria-hidden="true">
-    <span class="orb orb-a"></span>
-    <span class="orb orb-b"></span>
-    <span class="orb orb-c"></span>
-  </div>
+  <div class="login-bg" aria-hidden="true"></div>
 
   <div class="login-shell">
     <div class="login-hero">
@@ -30,108 +54,34 @@
         </div>
       </div>
       <p class="hero-brand-system">自动破窗器中央管理系统</p>
+    </div>
 
-      <h1>让每一次出行<br><span>都被安全守护</span></h1>
-      <p class="hero-sub">自动破窗器中央管理系统<br>设备监控 · 远程升级 · 授权破窗</p>
-
-      <div class="hero-tags">
-        <span><i class="tag-dot green"></i>实时在线</span>
-        <span><i class="tag-dot blue"></i>远程应急</span>
-        <span><i class="tag-dot orange"></i>操作留痕</span>
-      </div>
-
-      <div class="hero-panel" aria-hidden="true">
-        <div class="hero-panel-head">
-          <span>FURTHER · SMART SAFETY</span>
-          <span class="hero-panel-live"><i></i>系统在线</span>
-        </div>
-
-        <div class="hero-panel-visual">
-          <svg viewBox="0 0 520 230">
-            <defs>
-              <linearGradient id="tpIcon" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#164C80"/>
-                <stop offset="1" stop-color="#08182C"/>
-              </linearGradient>
-              <linearGradient id="tpBreak" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#FFA257"/>
-                <stop offset="1" stop-color="#FF6A00"/>
-              </linearGradient>
-              <linearGradient id="tpScan" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stop-color="rgba(77,163,255,0)"/>
-                <stop offset=".5" stop-color="rgba(77,163,255,.55)"/>
-                <stop offset="1" stop-color="rgba(77,163,255,0)"/>
-              </linearGradient>
-              <filter id="tpGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="6" result="b"/>
-                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-            </defs>
-
-            <g opacity=".12" stroke="#7FB7FF">
-              <path d="M0 46H520M0 92H520M0 138H520M0 184H520"/>
-              <path d="M60 0V230M120 0V230M180 0V230M240 0V230M300 0V230M360 0V230M420 0V230M480 0V230"/>
-            </g>
-
-            <g class="radar-spin" fill="none" stroke="#4DA3FF" opacity=".38" style="transform-origin:260px 112px">
-              <circle cx="260" cy="112" r="98" stroke-dasharray="2 7"/>
-              <circle cx="260" cy="112" r="78" stroke-dasharray="2 7"/>
-              <circle cx="260" cy="112" r="58" stroke-dasharray="2 7"/>
-            </g>
-            <g fill="#4DA3FF" opacity=".8">
-              <circle cx="260" cy="14" r="2.5"/><circle cx="358" cy="112" r="2.5"/>
-              <circle cx="260" cy="210" r="2.5"/><circle cx="162" cy="112" r="2.5"/>
-            </g>
-
-            <g fill="none" stroke="#2F7FD0" stroke-width="1.2" opacity=".55">
-              <path d="M58 58 H118 L148 88 H186"/>
-              <path d="M462 162 H402 L372 132 H334"/>
-              <path d="M68 182 H128 L158 152"/>
-            </g>
-            <g fill="#4DA3FF" opacity=".7">
-              <circle cx="58" cy="58" r="3"/><circle cx="462" cy="162" r="3"/><circle cx="68" cy="182" r="3"/>
-            </g>
-
-            <g filter="url(#tpGlow)">
-              <rect x="186" y="46" width="148" height="132" rx="32" fill="url(#tpIcon)" stroke="#4DA3FF" stroke-width="1.4"/>
-            </g>
-
-            <rect x="208" y="64" width="104" height="50" rx="10" fill="rgba(190,225,255,.08)" stroke="rgba(160,210,255,.5)"/>
-            <path d="M226 64V114M252 64V114M278 64V114" stroke="rgba(160,210,255,.22)"/>
-            <path d="M252 89 L240 77 M252 89 L264 78 M252 89 L239 101 M252 89 L265 100 M252 89 L252 75"
-                  stroke="#9ED0FF" stroke-width="1.6" stroke-linecap="round"/>
-            <circle cx="252" cy="89" r="2.4" fill="#CDE8FF"/>
-
-            <rect x="240" y="126" width="44" height="18" rx="7" fill="url(#tpBreak)"/>
-            <circle cx="262" cy="135" r="3.4" fill="#fff"/>
-            <g class="signal" fill="none" stroke="#FF9A4D" stroke-width="2" stroke-linecap="round">
-              <path d="M270 128 Q279 119 288 128"/>
-              <path d="M267 124 Q280 110 293 123"/>
-            </g>
-            <circle cx="262" cy="158" r="3" fill="#34C759"/>
-
-            <g fill="#9FC6EA" font-size="9" font-family="ui-monospace, Menlo, Consolas, monospace" letter-spacing="1">
-              <text x="58" y="48">ONLINE · 22</text>
-              <text x="394" y="152">SOS · 0.8s</text>
-              <text x="68" y="202">24/7 GUARD</text>
-            </g>
-            <rect x="0" y="110" width="520" height="1" fill="url(#tpScan)" opacity=".6"/>
-          </svg>
-        </div>
-
-        <div class="hero-panel-metrics">
-          <div class="hero-metric"><b>22</b><span>在线单体</span></div>
-          <div class="hero-metric"><b>3</b><span>故障告警</span></div>
-          <div class="hero-metric"><b>0.8s</b><span>应急响应</span></div>
-        </div>
+    <div class="login-product-badge">
+      <span class="product-icon">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="4" y="9" width="24" height="15" rx="5" fill="#FF7A1A"/>
+          <circle cx="16" cy="16.5" r="3" fill="#fff"/>
+          <path d="M23 13 Q27 8 31 12" fill="none" stroke="#FFB35C" stroke-width="2" stroke-linecap="round"/>
+          <path d="M22 9 Q27 2 32 8" fill="none" stroke="#FF9A4D" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+        </svg>
+      </span>
+      <div>
+        <b>自动破窗器</b>
+        <small>远程应急 · 一键破窗</small>
       </div>
     </div>
 
     <div class="login-card">
       <div class="login-card-head">
-        <span class="eyebrow">欢迎回来</span>
-        <h2>登录管理端</h2>
-        <p>使用管理员或值班员账号继续</p>
+        <span class="eyebrow">客户管理端</span>
+        <h2>
+          <span class="title-desktop">自动破窗器中央管理系统</span>
+          <span class="title-mobile">登录管理端</span>
+        </h2>
+        <p>
+          <span class="sub-desktop">管理员登录</span>
+          <span class="sub-mobile">使用管理员或值班员账号继续</span>
+        </p>
       </div>
 
       <label class="field">
@@ -373,8 +323,8 @@
     document.write('<script src="https://lib.baomitu.com/leaflet/1.9.4/leaflet.js"><\/script>');
   }
 </script>
-<script src="map-config.js?v=20261124e"></script>
-<script src="data.js?v=20261124e"></script>
-<script src="app.js?v=20261124e"></script>
+<script src="map-config.js?v=20261124g"></script>
+<script src="data.js?v=20261124g"></script>
+<script src="app.js?v=20261124g"></script>
 </body>
 </html>
