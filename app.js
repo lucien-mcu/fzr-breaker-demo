@@ -22,6 +22,7 @@
   var searchInput = document.getElementById('searchInput');
   var treeBox = document.getElementById('tree');
   var statsBox = document.getElementById('stats');
+  var mobileStats = document.getElementById('mobileStats');
   var companyChips = document.getElementById('companyChips');
   var centerCol = document.querySelector('.center-col');
   var mapProvider = document.getElementById('mapProvider');
@@ -57,6 +58,7 @@
     companyId: 'ALL',
     vehicleId: '',
     userPickedVehicle: false,
+    collapsed: {},
     selectedUnits: [],
     mobileTab: 'map',
     map: null,
@@ -216,6 +218,27 @@
   loginPassword.addEventListener('keydown', function (e) { if (e.key === 'Enter') attemptLogin(); });
   loginAccount.addEventListener('keydown', function (e) { if (e.key === 'Enter') loginPassword.focus(); });
   document.getElementById('logoutBtn').addEventListener('click', attemptLogout);
+
+  var togglePassword = document.getElementById('togglePassword');
+  if (togglePassword) {
+    togglePassword.addEventListener('click', function () {
+      var showing = loginPassword.type === 'text';
+      loginPassword.type = showing ? 'password' : 'text';
+      togglePassword.classList.toggle('showing', !showing);
+      togglePassword.setAttribute('aria-label', showing ? '显示密码' : '隐藏密码');
+      loginPassword.focus();
+    });
+  }
+
+  var demoFill = document.getElementById('demoFill');
+  if (demoFill) {
+    demoFill.addEventListener('click', function () {
+      loginAccount.value = 'admin';
+      loginPassword.value = '123456';
+      loginError.textContent = '';
+      loginPassword.focus();
+    });
+  }
 
   /* ------------------------------ 地图 ------------------------------ */
   var PI = Math.PI;
@@ -617,6 +640,15 @@
     var points = vehicles.map(pointFor);
     if (points.length === 1) {
       S.map.setView(points[0], 13);
+      if (window.innerWidth <= 860) S.map.panBy([0, -70]);
+      return;
+    }
+    if (window.innerWidth <= 860) {
+      S.map.fitBounds(L.latLngBounds(points), {
+        paddingTopLeft: [24, 24],
+        paddingBottomRight: [24, 190],
+        maxZoom: 12
+      });
       return;
     }
     S.map.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 12 });
@@ -641,6 +673,18 @@
         '<div class="stat-label">' + c[0] + '</div>' +
         '</div>';
     }).join('');
+
+    if (mobileStats) {
+      var mini = [
+        ['总数', s.total, 'navy'],
+        ['在线', s.online, 'green'],
+        ['故障', s.fault, 'red'],
+        ['离线', s.offline, 'gray']
+      ];
+      mobileStats.innerHTML = mini.map(function (c) {
+        return '<div class="ms-item ' + c[2] + '"><b>' + c[1] + '</b><span>' + c[0] + '</span></div>';
+      }).join('');
+    }
   }
 
   /* ------------------------------ 左侧设备组织 ------------------------------ */
@@ -648,33 +692,87 @@
     var key = searchInput.value.trim().toLowerCase();
     var global = F.globalStats();
     var html = '<div class="tree-row root' + (S.companyId === 'ALL' ? ' selected' : '') + '" data-company="ALL">' +
-      '<span class="dot online"></span>' +
-      '<span>全部设备</span>' +
+      '<span class="tree-toggle-spacer"></span>' +
+      '<span class="dot ' + (global.online > 0 ? 'online' : '') + '"></span>' +
+      '<span class="tree-name">全部设备</span>' +
       '<span class="count">' + global.online + '/' + global.total + '</span>' +
       '</div>';
 
     var shown = 0;
     F.COMPANIES.forEach(function (company) {
-      if (key && company.name.toLowerCase().indexOf(key) < 0) return;
+      var companyMatch = !key || company.name.toLowerCase().indexOf(key) >= 0;
+      var vehicles = F.VEHICLES.filter(function (v) { return v.companyId === company.id; });
+      var matchingVehicles = key ? vehicles.filter(function (v) {
+        return v.plate.toLowerCase().indexOf(key) >= 0;
+      }) : vehicles;
+      if (key && !companyMatch && matchingVehicles.length === 0) return;
+
       shown += 1;
       var stats = F.companyStats(company.id);
       var selected = S.companyId === company.id ? ' selected' : '';
-      html += '<div class="tree-row' + selected + '" data-company="' + company.id + '">' +
-        '<span class="dot ' + (stats.online > 0 ? 'online' : '') + '"></span>' +
-        '<span>' + company.name + '</span>' +
-        (stats.fault > 0 ? '<span class="fault-tag">故障 ' + stats.fault + '</span>' : '') +
-        '<span class="count">' + stats.online + '/' + stats.total + '</span>' +
+      var collapsed = key ? false : !!S.collapsed[company.id];
+
+      var dotClass = stats.online > 0 ? 'online' : '';
+      var countClass = 'count';
+      html += '<div class="tree-row company' + selected + '" data-company="' + company.id + '">' +
+        '<button class="tree-toggle' + (collapsed ? ' collapsed' : '') + '" type="button" data-toggle="' + company.id + '" aria-label="展开或收起">' +
+          '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</button>' +
+        '<span class="dot ' + dotClass + '"></span>' +
+        '<span class="tree-name">' + company.name + '</span>' +
+        (stats.fault > 0 ? '<span class="fault-tag">' + stats.fault + '</span>' : '') +
+        '<span class="' + countClass + '">' + stats.online + '/' + stats.total + '</span>' +
         '</div>';
+
+      if (collapsed) return;
+
+      var list = companyMatch ? vehicles : matchingVehicles;
+      list.forEach(function (vehicle) {
+        var vst = F.vehicleStats(vehicle.id);
+        var vDot = vst.fault > 0 ? 'fault' : (vst.online > 0 ? 'online' : '');
+        var vSelected = S.vehicleId === vehicle.id ? ' selected' : '';
+        html += '<div class="tree-row vehicle' + vSelected + '" data-vehicle="' + vehicle.id + '">' +
+          '<span class="dot ' + vDot + '"></span>' +
+          '<span class="tree-plate">' + vehicle.plate + '</span>' +
+          '<span class="count">' + vst.online + '/' + vst.total + '</span>' +
+          '</div>';
+      });
     });
+
     if (shown === 0) {
-      html += '<div class="tree-empty">没有匹配的公司</div>';
+      html += '<div class="tree-empty">没有匹配的公司或车辆</div>';
     }
     treeBox.innerHTML = html;
   }
 
   treeBox.addEventListener('click', function (event) {
+    var toggle = event.target.closest('[data-toggle]');
+    if (toggle) {
+      event.stopPropagation();
+      var id = toggle.getAttribute('data-toggle');
+      S.collapsed[id] = !S.collapsed[id];
+      renderTree();
+      return;
+    }
+
+    var vehicleRow = event.target.closest('[data-vehicle]');
+    if (vehicleRow) {
+      var vehicleId = vehicleRow.getAttribute('data-vehicle');
+      var vehicle = F.vehicleById(vehicleId);
+      if (!vehicle) return;
+      if (S.companyId !== 'ALL' && S.companyId !== vehicle.companyId) {
+        setCompany(vehicle.companyId, true);
+      }
+      selectVehicle(vehicleId, true);
+      return;
+    }
+
     var row = event.target.closest('[data-company]');
-    if (row) setCompany(row.getAttribute('data-company'), false);
+    if (row) {
+      var companyId = row.getAttribute('data-company');
+      delete S.collapsed[companyId];
+      setCompany(companyId, false);
+    }
   });
 
   searchInput.addEventListener('input', renderTree);
@@ -718,13 +816,12 @@
           '<b class="vc-plate">' + vehicle.plate + '</b>' +
           '<span class="vc-badge ' + (st.online > 0 ? 'on' : 'off') + '">' +
             (st.online > 0 ? '在线' : '离线') + '</span>' +
-          (st.fault > 0 ? '<span class="vc-fault">故障 ' + st.fault + '</span>' : '') +
-          '<span class="vc-arrow">›</span>' +
         '</div>' +
         '<div class="vc-sub">' + companyName(vehicle.companyId) + ' · ' + vehicle.model + '</div>' +
         '<div class="vc-meta">' +
           '<span>单体 <b>' + st.online + '/' + st.total + '</b></span>' +
           '<span>固件 ' + st.firmware + '</span>' +
+          (st.fault > 0 ? '<span class="vc-meta-fault">故障 ' + st.fault + '</span>' : '') +
           '<span>心跳 ' + shortTime(latestSeen(units)) + '</span>' +
         '</div>' +
       '</div>';
@@ -791,10 +888,14 @@
     renderVehicleTable();
     renderDetail();
     updateMarkerIcons();
+    var picked = F.vehicleById(vehicleId);
+    if (picked) delete S.collapsed[picked.companyId];
+    renderTree();
 
     var vehicle = F.vehicleById(vehicleId);
     if (vehicle && S.map) {
       S.map.setView(pointFor(vehicle), Math.max(S.map.getZoom(), 11));
+      if (window.innerWidth <= 860) S.map.panBy([0, -60]);
     }
     if (openPanel && window.innerWidth <= 1080) {
       detailPanel.classList.add('open');
@@ -847,7 +948,7 @@
       '<div class="info-item"><span>单体总数</span><b>' + st.total + '</b></div>' +
       '<div class="info-item"><span>在线单体</span><b>' + st.online + '</b></div>' +
       '<div class="info-item"><span>故障单体</span><b class="' + (st.fault > 0 ? 'bad' : '') + '">' + st.fault + '</b></div>' +
-      '<div class="info-item"><span>最近心跳</span><b>' + nowText(latestSeen(units)) + '</b></div>' +
+      '<div class="info-item"><span>最近心跳</span><b>' + shortTime(latestSeen(units)) + '</b></div>' +
       '<div class="info-item"><span>当前固件</span><b>' + st.firmware + '</b></div>';
 
     unitRows.innerHTML = units.map(function (unit) {
@@ -1040,7 +1141,7 @@
   }, 2000);
 
   /* ------------------------------ 启动 ------------------------------ */
-  document.getElementById('loginAccount').focus();
+  if (window.innerWidth > 860) document.getElementById('loginAccount').focus();
   if (new URLSearchParams(window.location.search).get('demo') === '1') {
     attemptLogin();
   }

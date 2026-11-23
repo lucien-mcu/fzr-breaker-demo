@@ -3,78 +3,148 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0E3A66">
+  <meta name="theme-color" content="#F5F5F7">
   <title>自动破窗器中央管理系统</title>
   <link rel="icon" type="image/png" href="app-icon.png">
   <link rel="stylesheet" href="vendor/leaflet.css"
         onerror="this.onerror=function(){this.onerror=null;this.href='https://lib.baomitu.com/leaflet/1.9.4/leaflet.css'};this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
-  <link rel="stylesheet" href="styles.css?v=20261123c">
+  <link rel="stylesheet" href="styles.css?v=20261124d">
 </head>
 <body>
 
 <!-- ================= 登录 ================= -->
 <section id="loginView" class="login-screen">
-  <div class="login-deco deco-a"></div>
-  <div class="login-deco deco-b"></div>
-  <div class="login-deco deco-c"></div>
-  <div class="login-lines"></div>
-
-  <div class="login-left">
-    <div class="login-brand">
-      <span class="brand-en">FURTHER</span>
-      <span class="brand-cn">福泽尔科技</span>
-    </div>
-    <div class="login-slogan">让科技护航生命</div>
-    <div class="login-tag">自动破窗器 · 远程安全守护</div>
-
-    <!-- 福泽尔自动破窗器图案：车辆侧窗 + 裂纹 + 橙色破窗器 + 远程信号 -->
-    <div class="login-illustration" aria-hidden="true">
-      <svg viewBox="0 0 380 160">
-        <g fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.5)" stroke-width="2">
-          <rect x="16" y="28" width="348" height="96" rx="12"/>
-          <rect x="34" y="44" width="70" height="50" rx="5" fill="rgba(160,205,255,.16)"/>
-          <rect x="114" y="44" width="70" height="50" rx="5" fill="rgba(255,255,255,.12)"/>
-          <rect x="194" y="44" width="70" height="50" rx="5" fill="rgba(160,205,255,.16)"/>
-          <rect x="274" y="44" width="70" height="50" rx="5" fill="rgba(160,205,255,.16)"/>
-        </g>
-        <g stroke="rgba(255,255,255,.85)" stroke-width="1.6">
-          <path d="M149 70 L129 49 M149 70 L171 51 M149 70 L128 89 M149 70 L172 87 M149 70 L149 46"/>
-        </g>
-        <circle cx="149" cy="70" r="3" fill="#fff"/>
-        <rect x="160" y="94" width="44" height="22" rx="5" fill="#FF7A1A"/>
-        <circle cx="182" cy="105" r="4.5" fill="#fff"/>
-        <g fill="none" stroke="rgba(255,122,26,.75)" stroke-width="2">
-          <path d="M186 98 Q196 88 204 96"/>
-          <path d="M184 94 Q198 78 212 90"/>
-          <path d="M182 90 Q200 68 220 84"/>
-        </g>
-        <g fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.5)" stroke-width="2">
-          <circle cx="92" cy="132" r="12"/>
-          <circle cx="288" cy="132" r="12"/>
-        </g>
-      </svg>
-    </div>
-
-    <div class="login-copyright">© 2026 福泽尔科技　客户管理端</div>
+  <div class="login-bg" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
   </div>
 
-  <div class="login-card">
-    <h1>自动破窗器中央管理系统</h1>
-    <p class="login-sub">客户管理端 · 设备监控与应急控制</p>
+  <div class="login-shell">
+    <div class="login-hero">
+      <div class="hero-brand">
+        <span class="hero-logo">F</span>
+        <div class="hero-brand-text">
+          <b>FURTHER</b>
+          <small>福泽尔科技</small>
+        </div>
+      </div>
 
-    <label class="login-label">管理员登录</label>
-    <input id="loginAccount" class="text-input" type="text" value="admin"
-           autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="请输入账号">
-    <input id="loginPassword" class="text-input" type="password" value="123456"
-           autocomplete="current-password" placeholder="请输入密码">
-    <div id="loginError" class="login-error"></div>
-    <button id="loginBtn" class="login-btn" type="button">登 录</button>
-    <p class="login-hint">演示账号：admin / 123456　破窗密码：888888</p>
-    <p class="login-footnote">仅限授权人员使用，操作留痕</p>
+      <h1>让每一次出行<br><span>都被安全守护</span></h1>
+      <p class="hero-sub">自动破窗器中央管理系统<br>设备监控 · 远程升级 · 授权破窗</p>
+
+      <div class="hero-tags">
+        <span><i class="tag-dot green"></i>实时在线</span>
+        <span><i class="tag-dot blue"></i>远程应急</span>
+        <span><i class="tag-dot orange"></i>操作留痕</span>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <svg viewBox="0 0 460 260">
+          <defs>
+            <linearGradient id="winGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFFFFF"/>
+              <stop offset="1" stop-color="#E7F2FF"/>
+            </linearGradient>
+            <linearGradient id="devGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFA257"/>
+              <stop offset="1" stop-color="#FF6A00"/>
+            </linearGradient>
+            <filter id="heroShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1D4E89" flood-opacity=".14"/>
+            </filter>
+          </defs>
+          <g filter="url(#heroShadow)">
+            <rect x="30" y="40" width="400" height="160" rx="30" fill="url(#winGrad)" stroke="#D3E4F7" stroke-width="2"/>
+            <rect x="58" y="66" width="78" height="86" rx="13" fill="#FFFFFF" opacity=".58" stroke="#D7E8FA"/>
+            <rect x="150" y="66" width="78" height="86" rx="13" fill="#FFFFFF" opacity=".4" stroke="#D7E8FA"/>
+            <rect x="242" y="66" width="78" height="86" rx="13" fill="#FFFFFF" opacity=".58" stroke="#D7E8FA"/>
+            <rect x="334" y="66" width="68" height="86" rx="13" fill="#FFFFFF" opacity=".58" stroke="#D7E8FA"/>
+            <path d="M189 109 L171 88 M189 109 L207 90 M189 109 L170 130 M189 109 L208 128 M189 109 L189 84"
+                  stroke="#7FA8D9" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="189" cy="109" r="3.5" fill="#7FA8D9"/>
+            <rect x="196" y="138" width="58" height="26" rx="9" fill="url(#devGrad)"/>
+            <circle cx="225" cy="151" r="5" fill="#FFFFFF"/>
+            <path d="M232 143 Q242 132 252 142" stroke="#FF7A1A" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M229 138 Q244 121 259 136" stroke="#FF9A4D" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+            <circle cx="112" cy="210" r="16" fill="#FFFFFF" stroke="#D3E4F7" stroke-width="2"/>
+            <circle cx="350" cy="210" r="16" fill="#FFFFFF" stroke="#D3E4F7" stroke-width="2"/>
+          </g>
+          <g>
+            <rect x="48" y="16" width="104" height="32" rx="16" fill="#FFFFFF" opacity=".92"/>
+            <circle cx="68" cy="32" r="4" fill="#34C759"/>
+            <text x="80" y="37" font-size="12" fill="#3A3A3C">在线 22</text>
+          </g>
+          <g>
+            <rect x="318" y="214" width="124" height="32" rx="16" fill="#FFFFFF" opacity=".92"/>
+            <circle cx="338" cy="230" r="4" fill="#FF7A1A"/>
+            <text x="350" y="235" font-size="12" fill="#3A3A3C">远程守护中</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <div class="login-card-head">
+        <span class="eyebrow">欢迎回来</span>
+        <h2>登录管理端</h2>
+        <p>使用管理员或值班员账号继续</p>
+      </div>
+
+      <label class="field">
+        <span class="field-label">账号</span>
+        <div class="input-wrap">
+          <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M4.8 20c.7-3.6 3.4-5.6 7.2-5.6s6.5 2 7.2 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <input id="loginAccount" class="text-input" type="text" value="admin"
+                 autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="请输入账号">
+        </div>
+      </label>
+
+      <label class="field">
+        <span class="field-label">密码</span>
+        <div class="input-wrap">
+          <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="10" width="14" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M8.5 10V7.8a3.5 3.5 0 0 1 7 0V10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <input id="loginPassword" class="text-input" type="password" value="123456"
+                 autocomplete="current-password" placeholder="请输入密码">
+          <button id="togglePassword" class="field-action" type="button" aria-label="显示密码">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.5 12s3.6-6 9.5-6 9.5 6 9.5 6-3.6 6-9.5 6-9.5-6-9.5-6Z"
+                    fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            </svg>
+          </button>
+        </div>
+      </label>
+
+      <div id="loginError" class="login-error"></div>
+
+      <button id="loginBtn" class="login-btn" type="button">
+        <span>登录</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button id="demoFill" class="demo-fill" type="button">
+        <span>演示账号</span>
+        <code>admin / 123456</code>
+        <i>一键填入</i>
+      </button>
+
+      <p class="login-footnote">仅限授权人员使用 · 所有操作留痕</p>
+    </div>
   </div>
+
+  <footer class="login-footer">© 2026 福泽尔科技 · 自动破窗器中央管理系统</footer>
 </section>
 
-<!-- ================= 客户管理端主界面 ================= -->
+<!-- ================= 管理端 ================= -->
 <section id="dashboardView" class="dashboard hidden">
   <header class="topbar">
     <div class="topbar-left">
@@ -85,43 +155,48 @@
       </div>
       <div class="topbar-divider"></div>
       <div class="topbar-titles">
-        <strong>自动破窗器中央管理系统</strong>
-        <small>设备监控中心</small>
+        <strong>监控中心</strong>
+        <small>自动破窗器中央管理系统</small>
       </div>
     </div>
     <div class="topbar-right">
-      <span id="refreshTime">刷新于 --:--:--</span>
-      <span id="userName"></span>
+      <span id="refreshTime" class="topbar-refresh">刷新于 --:--:--</span>
+      <span class="topbar-user">
+        <span class="avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8.4" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.2 20c.7-3.5 3.4-5.4 6.8-5.4s6.1 1.9 6.8 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+        <span id="userName"></span>
+      </span>
       <span id="rolePill" class="role-pill">管理员</span>
-      <button id="logoutBtn" class="topbar-logout" type="button">退出登录</button>
+      <button id="logoutBtn" class="topbar-logout" type="button">退出</button>
     </div>
   </header>
 
   <div id="stats" class="stats"></div>
-  <div id="companyChips" class="company-chips" aria-label="公司筛选"></div>
+  <div id="companyChips" class="company-chips" hidden></div>
 
   <main class="workspace">
-    <!-- 左：设备组织 -->
     <aside id="sidebar" class="sidebar card">
       <div class="panel-head">
         <b>设备组织</b>
         <span>在线/总数</span>
       </div>
       <div class="search-group">
-        <input id="searchInput" type="text" placeholder="搜索公司名称">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <input id="searchInput" type="text" placeholder="搜索公司或车牌">
         <button id="searchBtn" type="button" aria-label="搜索">⌕</button>
       </div>
       <div id="tree" class="tree"></div>
+      <div id="mobileStats" class="mobile-stats" aria-label="设备概览"></div>
     </aside>
 
-    <!-- 中：地图 + 车辆状态 -->
     <section class="center-col" data-mobile-tab="map">
-      <div class="mobile-tabs" role="tablist" aria-label="地图与车辆列表">
-        <button class="mobile-tab active" data-mobile-tab="map" type="button" role="tab">地图监控</button>
-        <button class="mobile-tab" data-mobile-tab="list" type="button" role="tab">车辆列表</button>
-      </div>
       <div class="map-card card">
         <div id="map"></div>
+
         <div class="map-overlay">
           <b id="mapCompany">全部公司</b>
           <span id="mapSummary"></span>
@@ -132,6 +207,7 @@
             <option value="3">OpenStreetMap</option>
           </select>
         </div>
+
         <div class="map-controls">
           <button id="mapZoomIn" type="button" aria-label="放大">+</button>
           <button id="mapZoomOut" type="button" aria-label="缩小">−</button>
@@ -161,8 +237,8 @@
 
     <div id="detailBackdrop" class="detail-backdrop hidden"></div>
 
-    <!-- 右：车辆明细 -->
     <aside id="detailPanel" class="detail-panel card">
+      <div class="sheet-grabber" aria-hidden="true"></div>
       <div class="detail-head">
         <div>
           <h2 id="detailTitle">未选择车辆</h2>
@@ -189,19 +265,20 @@
         </div>
         <div id="unitCards" class="unit-cards"></div>
 
-        <div class="detail-actions">
-          <button id="upgradeBtn" class="btn btn-primary" type="button">远程升级</button>
-          <button id="breakBtn" class="btn btn-danger" type="button">一键破窗</button>
-          <button id="refreshBtn" class="btn btn-ghost" type="button">刷新</button>
-        </div>
-
         <div class="log-head"><b>操作日志</b><span>破窗、升级与刷新记录</span></div>
         <div id="detailLog" class="detail-log"></div>
+      </div>
+
+      <div class="detail-actions">
+        <button id="upgradeBtn" class="btn btn-primary" type="button">远程升级</button>
+        <button id="breakBtn" class="btn btn-danger" type="button">一键破窗</button>
+        <button id="refreshBtn" class="btn btn-ghost" type="button">刷新</button>
       </div>
     </aside>
   </main>
 
   <footer class="statusbar">数据每 2 秒自动刷新 · 远程破窗必须通过操作密码授权</footer>
+  <div id="sidebarMask" class="sidebar-mask hidden"></div>
 </section>
 
 <!-- ================= 远程升级 ================= -->
@@ -242,7 +319,6 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
-<div id="sidebarMask" class="sidebar-mask hidden"></div>
 
 <script src="vendor/leaflet.js"></script>
 <script>
@@ -254,8 +330,8 @@
     document.write('<script src="https://lib.baomitu.com/leaflet/1.9.4/leaflet.js"><\/script>');
   }
 </script>
-<script src="map-config.js?v=20261123c"></script>
-<script src="data.js?v=20261123c"></script>
-<script src="app.js?v=20261123c"></script>
+<script src="map-config.js?v=20261124d"></script>
+<script src="data.js?v=20261124d"></script>
+<script src="app.js?v=20261124d"></script>
 </body>
 </html>
